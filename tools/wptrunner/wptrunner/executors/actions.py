@@ -1,6 +1,6 @@
 
 class ClickAction(object):
-    nmae = "click"
+    name = "click"
 
     def __init__(self, logger, protocol):
         self.logger = logger
