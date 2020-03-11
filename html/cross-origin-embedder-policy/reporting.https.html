@@ -111,6 +111,52 @@ async_test(async (t) => {
     await new Promise(resolve => {
       iframe.addEventListener('load', resolve, {once: true});
     });
+    const emptyFrame = iframe.contentDocument.createElement('iframe');
+    iframe.contentDocument.body.appendChild(emptyFrame);
+
+    function fetchInIframe(url) {
+      const init = { mode: 'no-cors', cache: 'no-store' };
+      emptyFrame.contentWindow.fetch(url, init).catch(() => {});
+    }
+
+    const emptyWindow = iframe.contentWindow.open();
+    t.add_cleanup(() => emptyWindow.close());
+
+    function fetchInWindow(url) {
+      const init = { mode: 'no-cors', cache: 'no-store' };
+      emptyWindow.fetch(url, init).catch(() => {});
+    }
+
+    const suffix = 'subresource-corp-empty';
+    const url = `${REMOTE_ORIGIN}/common/text-plain.txt?${suffix}`;
+
+    fetchInIframe(url + '-nested');
+    fetchInWindow(url + '-opened');
+
+    // Wait 3 seconds for reports to settle.
+    await wait(3000);
+
+    assert_equals(emptyFrame.src, '');
+    checkCorpReportExistence(reports, url + '-nested', iframe.src);
+    assert_equals(emptyWindow.location.href, 'about:blank');
+    checkCorpReportExistence(reports, url + '-opened', iframe.src);
+
+    t.done();
+  } catch (e) {
+    t.step(() => { throw e });
+  }
+}, 'subresource CORP for empty frame');
+
+async_test(async (t) => {
+  try {
+    const iframe = document.createElement('iframe');
+    t.add_cleanup(() => iframe.remove());
+
+    iframe.src = `resources/reporting-empty-frame.html`
+    document.body.appendChild(iframe);
+    await new Promise(resolve => {
+      iframe.addEventListener('load', resolve, {once: true});
+    });
 
     const w = iframe.contentWindow;
 
