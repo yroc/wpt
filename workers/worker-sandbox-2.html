@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<meta charset=utf-8>
+<script src="/resources/testharness.js"></script>
+<script src="/resources/testharnessreport.js"></script>
+<meta content="sandbox allow-scripts" http-equiv="Content-Security-Policy">
+<body>
+<script>
+async_test(t => {
+  const worker = new Worker("support/post-origin-on-load-worker.js");
+  worker.onerror = t.unreached_func("Worker construction failed");
+  worker.onmessage = t.step_func_done(e => {
+    assert_equals(e.data, "null");
+  });
+}, "Worker is sandboxed? (only if dedicated worker doesn't inherit CSP)");
+</script>
+</body>
