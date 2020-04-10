@@ -1,5 +1,8 @@
 'use strict';
 
+// This file checks additional interface requirements, on top of the basic IDL
+// that is validated in service-workers/idlharness.any.js
+
 importScripts('/resources/testharness.js');
 
 test(function() {
