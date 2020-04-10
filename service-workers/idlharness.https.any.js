@@ -25,7 +25,7 @@ idl_test(
 
       const scope = 'resources/scope/idlharness';
       const registration = await service_worker_unregister_and_register(
-          t, 'resources/empty-worker.js', scope);
+          t, 'service-worker/resources/empty-worker.js', scope);
       t.add_cleanup(() => registration.unregister());
 
       window.registrationInstance = registration;
