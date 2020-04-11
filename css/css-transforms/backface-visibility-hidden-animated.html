@@ -1,0 +1,41 @@
+<!doctype html>
+  <link rel="author" title="Chris Harrelson" href="mailto:chrishtr@chromium.org">
+  <link rel="help" href="https://drafts.csswg.org/css-transforms-2/#propdef-backface-visibility">
+  <link rel="match" href="backface-visibility-hidden-animated-ref.html">
+<style>
+@keyframes spin {
+  from { transform: rotateY(60deg); }
+  to { transform: rotateY(180deg); }
+}
+
+#flip {
+  animation: 1s linear 0s infinite forwards spin;
+  height: 100px;
+  width: 100px;
+  transform: rotateY(60deg);
+  transform-style: preserve-3d;
+}
+
+#back {
+  background: lightblue;
+  transform: rotateY(180deg);
+   position: absolute;
+  top: 0;
+  left: 0;
+  width: 200px;
+  height: 200px;
+  backface-visibility: hidden;
+}
+
+#posabs {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  background: yellow;
+}
+</style>
+<div id="flip">
+  <div id="back">
+    <i id="posabs">Text</i>
+  </div>
+</div>
