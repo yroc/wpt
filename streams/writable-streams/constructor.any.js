@@ -1,5 +1,4 @@
 // META: global=worker,jsshell
-// META: script=../resources/constructor-ordering.js
 'use strict';
 
 const error1 = new Error('error1');
@@ -103,11 +102,6 @@ test(() => {
 }, 'WritableStream instances should have standard methods and properties');
 
 test(() => {
-  ['WritableStreamDefaultWriter', 'WritableStreamDefaultController'].forEach(c =>
-      assert_equals(typeof self[c], 'undefined', `${c} should not be exported`));
-}, 'private constructors should not be exported');
-
-test(() => {
   let WritableStreamDefaultController;
   new WritableStream({
     start(c) {
@@ -147,39 +141,3 @@ test(() => {
   assert_throws_js(TypeError, () => new WritableStreamDefaultWriter(stream),
                    'constructor should throw a TypeError exception');
 }, 'WritableStreamDefaultWriter constructor should throw when stream argument is locked');
-
-const operations = [
-  op('get', 'size'),
-  op('get', 'highWaterMark'),
-  op('get', 'type'),
-  op('validate', 'type'),
-  op('validate', 'size'),
-  op('tonumber', 'highWaterMark'),
-  op('validate', 'highWaterMark'),
-  op('get', 'write'),
-  op('validate', 'write'),
-  op('get', 'close'),
-  op('validate', 'close'),
-  op('get', 'abort'),
-  op('validate', 'abort'),
-  op('get', 'start'),
-  op('validate', 'start')
-];
-
-for (const failureOp of operations) {
-  test(() => {
-    const record = new OpRecorder(failureOp);
-    const underlyingSink = createRecordingObjectWithProperties(record, ['type', 'start', 'write', 'close', 'abort']);
-    const strategy = createRecordingStrategy(record);
-
-    try {
-      new WritableStream(underlyingSink, strategy);
-      assert_unreached('constructor should throw');
-    } catch (e) {
-      assert_equals(typeof e, 'object', 'e should be an object');
-    }
-
-    assert_equals(record.actual(), expectedAsString(operations, failureOp),
-                  'operations should be performed in the right order');
-  }, `WritableStream constructor should stop after ${failureOp} fails`);
-}

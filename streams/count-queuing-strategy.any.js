@@ -1,6 +1,15 @@
 // META: global=worker,jsshell
 'use strict';
 
+const highWaterMarkConversions = new Map([
+  [-Infinity, -Infinity],
+  [NaN, NaN],
+  ['foo', NaN],
+  ['0', 0],
+  [{}, NaN],
+  [() => {}, NaN]
+]);
+
 test(() => {
 
   new CountQueuingStrategy({ highWaterMark: 4 });
@@ -9,12 +18,12 @@ test(() => {
 
 test(() => {
 
-  for (const highWaterMark of [-Infinity, NaN, 'foo', {}, () => {}]) {
-    const strategy = new CountQueuingStrategy({ highWaterMark });
-    assert_equals(strategy.highWaterMark, highWaterMark, `${highWaterMark} gets set correctly`);
+  for (const [input, output] of highWaterMarkConversions.entries()) {
+    const strategy = new CountQueuingStrategy({ highWaterMark: input });
+    assert_equals(strategy.highWaterMark, output, `${input} gets set correctly`);
   }
 
-}, 'Can construct a CountQueuingStrategy with any value as its high water mark');
+}, 'Values are converted per the unrestricted double rules (but not further validated)');
 
 test(() => {
 
@@ -29,13 +38,13 @@ test(() => {
 
   assert_throws_js(TypeError, () => new CountQueuingStrategy(), 'construction fails with undefined');
   assert_throws_js(TypeError, () => new CountQueuingStrategy(null), 'construction fails with null');
+  assert_throws_js(TypeError, () => new CountQueuingStrategy(true), 'construction fails with true');
+  assert_throws_js(TypeError, () => new CountQueuingStrategy(5), 'construction fails with 5');
+  assert_throws_js(TypeError, () => new CountQueuingStrategy({}), 'construction fails with {}');
   assert_throws_js(Error, () => new CountQueuingStrategy(highWaterMarkObjectGetterThrowing),
     'construction fails with an object with a throwing highWaterMark getter');
 
-  // Should not fail:
-  new CountQueuingStrategy('potato');
-  new CountQueuingStrategy({});
-  new CountQueuingStrategy(highWaterMarkObjectGetter);
+  assert_equals((new CountQueuingStrategy(highWaterMarkObjectGetter)).highWaterMark, 1);
 
 }, 'CountQueuingStrategy constructor behaves as expected with strange arguments');
 
@@ -78,34 +87,13 @@ test(() => {
 
 test(() => {
 
-  const strategy = new CountQueuingStrategy({ highWaterMark: 4 });
+  for (const [input, output] of highWaterMarkConversions.entries()) {
+    const strategy = new CountQueuingStrategy({ highWaterMark: 0 });
+    strategy.highWaterMark = input;
+    assert_equals(strategy.highWaterMark, output, `${input} gets set correctly`);
+  }
 
-  assert_object_equals(Object.getOwnPropertyDescriptor(strategy, 'highWaterMark'),
-    { value: 4, writable: true, enumerable: true, configurable: true },
-    'highWaterMark property should be a data property with the value passed the constructor');
-  assert_equals(typeof strategy.size, 'function');
-
-}, 'CountQueuingStrategy instances have the correct properties');
-
-test(() => {
-
-  const strategy = new CountQueuingStrategy({ highWaterMark: 4 });
-  assert_equals(strategy.highWaterMark, 4);
-
-  strategy.highWaterMark = 10;
-  assert_equals(strategy.highWaterMark, 10);
-
-  strategy.highWaterMark = 'banana';
-  assert_equals(strategy.highWaterMark, 'banana');
-
-}, 'CountQueuingStrategy\'s highWaterMark property can be set to anything');
-
-test(() => {
-
-  assert_equals(CountQueuingStrategy.name, 'CountQueuingStrategy',
-                'CountQueuingStrategy.name must be "CountQueuingStrategy"');
-
-}, 'CountQueuingStrategy.name is correct');
+}, 'CountQueuingStrategy\'s highWaterMark property setter does unrestricted double conversions');
 
 class SubClass extends CountQueuingStrategy {
   size() {
@@ -119,7 +107,7 @@ class SubClass extends CountQueuingStrategy {
 
 test(() => {
 
-  const sc = new SubClass({highWaterMark: 77});
+  const sc = new SubClass({ highWaterMark: 77 });
   assert_equals(sc.constructor.name, 'SubClass',
                 'constructor.name should be correct');
   assert_equals(sc.highWaterMark, 77,
