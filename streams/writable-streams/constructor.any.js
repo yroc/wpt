@@ -4,6 +4,9 @@
 const error1 = new Error('error1');
 error1.name = 'error1';
 
+const error2 = new Error('error2');
+error2.name = 'error2';
+
 promise_test(() => {
   let controller;
   const ws = new WritableStream({
@@ -83,6 +86,15 @@ promise_test(() => {
 test(() => {
   new WritableStream();
 }, 'WritableStream should be constructible with no arguments');
+
+test(() => {
+  const underlyingSink = { get start() { throw error1; } };
+  const queuingStrategy = { highWaterMark: 0, get size() { throw error2; } };
+
+  // underlyingSink is converted in prose in the method body, whereas queuingStrategy is done at the IDL layer.
+  // So the queuingStrategy exception should be encountered first.
+  assert_throws_exactly(error2, () => new WritableStream(underlyingSink, queuingStrategy));
+}, 'underlyingSink argument should be converted after queuingStrategy argument');
 
 test(() => {
   const ws = new WritableStream({});
