@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>CSS Variables Test: Style changes on properties using variables</title>
+<link rel="author" title="Javier Fernandez Garcia-Boente" href="mailto:jfernandez@igalia.com">
+<link rel="help" href="http://www.w3.org/TR/css-variables-1/#using-variables">
+<meta name="assert" content="A change in the custom property declaration must be propagated to all the descendants">
+<script src="/resources/testharness.js"></script>
+<script src="/resources/testharnessreport.js"></script>
+<div id="outer">
+    <div id="inbetween">
+        <div id="inner"></div>
+    </div>
+</div>
+<script>
+    "use strict";
+    var colorValues = [
+        { Id: "case1", outer: "red",   inbetween: "",     expected: "rgb(255, 0, 0)" },
+        { Id: "case2", outer: "red",   inbetween: "blue", expected: "rgb(0, 0, 255)" },
+        { Id: "case3", outer: "green", inbetween: "blue", expected: "rgb(0, 0, 255)" },
+        { Id: "case4", outer: "green", inbetween: "",     expected: "rgb(0, 128, 0)" },
+        { Id: "case5", outer: "green", inbetween: "red",  expected: "rgb(255, 0, 0)" },
+        { Id: "case6", outer: ""     , inbetween: "red",  expected: "rgb(255, 0, 0)" },
+        { Id: "case7", outer: "blue" , inbetween: ""   ,  expected: "rgb(0, 0, 255)" },
+    ];
+
+    var whiteSpaceValues = [
+        { Id: "case1", outer: "pre",      inbetween: "",         expected: "pre"      },
+        { Id: "case2", outer: "pre-wrap", inbetween: "",         expected: "pre-wrap" },
+        { Id: "case3", outer: "pre-wrap", inbetween: "nowrap",   expected: "nowrap"   },
+        { Id: "case3", outer: "pre-wrap", inbetween: "",         expected: "pre-wrap" },
+        { Id: "case4", outer: "pre-line", inbetween: "normal",   expected: "normal"   },
+        { Id: "case5", outer: "pre-line", inbetween: "",         expected: "pre-line" },
+        { Id: "case6", outer: "",         inbetween: "pre-wrap", expected: "pre-wrap" },
+        { Id: "case7", outer: "",         inbetween: "",         expected: "normal"   },
+    ];
+
+    var testcases = [
+        { property: "color",            values: colorValues,      description: "Testing inherited properties"     },
+        { property: "background-color", values: colorValues,      description: "Testing non-inherited properties" },
+        { property: "white-space",      values: whiteSpaceValues, description: "Testing independent properties"   },
+    ];
+
+    testcases.forEach(function (testcase) {
+        test( function () {
+            inner.style.cssText = testcase.property + ': var(--x)';
+            testcase.values.forEach(function (value) {
+                outer.style.cssText = "--x:" + value.outer;
+                inbetween.style.cssText = "--x:" + value.inbetween;
+                let computedStyle = getComputedStyle(inner);
+                let actualValue = computedStyle.getPropertyValue(testcase.property);
+                assert_equals(actualValue, value.expected, value.Id);
+            });
+        }, "Test declaration changes on '" + testcase.property + "' as variable");
+
+        test( function () {
+            inner.style.cssText = testcase.property + ': inherit';
+            inbetween.style.cssText = testcase.property + ': inherit';
+            testcase.values.forEach(function (value) {
+                outer.style.cssText = "--x:" + value.outer + "; " + testcase.property + ": " + value.outer;
+                let actualValue = getComputedStyle(inner).getPropertyValue(testcase.property);
+                let expectedValue = getComputedStyle(outer).getPropertyValue(testcase.property);
+                assert_equals(actualValue, expectedValue, value.Id);
+            });
+        }, "Avoid masking differences on '" + testcase.property + "' due declaration changes");
+    });
+</script>
