@@ -95,7 +95,8 @@ def create_complete_parser():
     for command in commands:
         props = commands[command]
 
-        if props["virtualenv"]:
+        if props["virtualenv"] and (
+            (not props["py3only"]) or sys.version_info.major == 3):
             setup_virtualenv(None, False, props)
 
         subparser = import_command('wpt', command, props)[1]
