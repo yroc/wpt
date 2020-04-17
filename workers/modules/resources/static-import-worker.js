@@ -3,9 +3,7 @@
 import * as module from './export-on-load-script.js';
 if ('DedicatedWorkerGlobalScope' in self &&
     self instanceof DedicatedWorkerGlobalScope) {
-  self.onmessage = e => {
-    e.target.postMessage(module.importedModules);
-  };
+  postMessage(module.importedModules);
 } else if (
     'SharedWorkerGlobalScope' in self &&
     self instanceof SharedWorkerGlobalScope) {
