@@ -586,7 +586,8 @@ ast_checkers = [item() for item in [OpenModeCheck]]
 
 def check_python_ast(repo_root, path, f):
     # type: (str, str, IO[bytes]) -> List[rules.Error]
-    if not path.endswith(".py"):
+    # *.quic.py are Python 3 only and cannot be parsed by Python 2.
+    if (not path.endswith(".py")) or path.endswith(".quic.py"):
         return []
 
     try:
@@ -664,6 +665,8 @@ def check_script_metadata(repo_root, path, f):
             elif key == b"script":
                 pass
             elif key == b"variant":
+                pass
+            elif key == b"quic":
                 pass
             else:
                 errors.append(rules.UnknownMetadata.error(path,
