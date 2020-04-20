@@ -227,6 +227,44 @@ test(() => {
 
 test(() => {
   smokeTest();
+  try {
+    new PaymentRequest([{supportedMethods: "https://play.google.com/billing"}], {id: "foo"})
+  } catch (err) {
+    assert_unreached(
+        `Unexpected error constructing PaymentReuqest: ${err.message}`
+      );
+  }
+}, `The total field is optional when the merchant requests only app-store billing methods.`);
+
+test(() => {
+  smokeTest();
+  assert_throws_js(TypeError, () => {
+    new PaymentRequest([{supportedMethods: "https://play.google.com/billing"},
+      {supportedMethods: "https://{{domains[nonexistent]}}/payment-request"}], {id: "foo"});
+  });
+}, `The total field is manadatory when the merchant requests non-app-store billing methods.`);
+
+test(() => {
+  smokeTest();
+  try {
+    new PaymentRequest([{supportedMethods: "https://play.google.com/billing"}])
+  } catch (err) {
+    assert_unreached(
+        `Unexpected error constructing PaymentReuqest: ${err.message}`
+      );
+  }
+}, `The details field is optional when the merchant requests only app-store billing methods.`);
+
+test(() => {
+  smokeTest();
+  assert_throws_js(TypeError, () => {
+    new PaymentRequest([{supportedMethods: "https://play.google.com/billing"},
+      {supportedMethods: "https://{{domains[nonexistent]}}/payment-request"}]);
+  });
+}, `The details field is manadatory when the merchant requests non-app-store billing methods.`);
+
+test(() => {
+  smokeTest();
   for (const prop in ["displayItems", "shippingOptions", "modifiers"]) {
     try {
       const details = Object.assign({}, defaultDetails, { [prop]: [] });
