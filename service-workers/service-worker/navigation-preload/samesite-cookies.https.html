@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>Navigation Preload: SameSite cookies</title>
+<script src="/resources/testharness.js"></script>
+<script src="/resources/testharnessreport.js"></script>
+<script src="../resources/test-helpers.sub.js"></script>
+<body>
+<script>
+const scope = 'resources/set-cookie.py';
+const script = 'resources/navigation-preload-worker.js';
+
+async function samesite_cookies_test(t, samesite, cookie) {
+  {
+    const frame = await with_iframe(scope + '?samesite=' + samesite + '&cookie-name=' + cookie);
+    t.add_cleanup(() => frame.remove());
+    // The body will be 0 because this is the first visit.
+    assert_equals(frame.contentDocument.body.textContent, '0');
+  }
+
+  {
+    const frame = await with_iframe(scope + '?samesite=' + samesite + '&cookie-name=' + cookie);
+    t.add_cleanup(() => frame.remove());
+    // The body will be 1 because this is the second visit.
+    assert_equals(frame.contentDocument.body.textContent, '1');
+  }
+}
+
+promise_test(async t => {
+  const registration =
+    await service_worker_unregister_and_register(t, script, scope);
+  await wait_for_state(t, registration.installing, 'activated');
+  await registration.navigationPreload.enable();
+
+  promise_test(async t => {
+    registration.unregister();
+  }, 'Unregister a service worker.');
+}, 'Set up a service worker for navigation preload tests.');
+
+promise_test(async t => {
+  await samesite_cookies_test(t, 'None', 'cookie-key-none');
+}, 'Navigation Preload for same site cookies (None).');
+
+promise_test(async t => {
+  await samesite_cookies_test(t, 'Strict', 'cookie-key-strict');
+}, 'Navigation Preload for same site cookies (Strict).');
+
+promise_test(async t => {
+  await samesite_cookies_test(t, 'Lax', 'cookie-key-lax');
+}, 'Navigation Preload for same site cookies (Lax).');
+
+</script>
+</body>
